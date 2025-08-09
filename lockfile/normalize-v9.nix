@@ -34,11 +34,15 @@ let
   # Turn name/version into "/name/version" key
   keyFor = name: version: "/" + name + "/" + version;
 
-  # Build initial IR packages from raw.packages (keys are name@version)
+  # Build initial IR packages from raw.packages; re-key to "/name/version"
   rawPackages = if (lib.hasAttr "packages" raw) then raw.packages else {};
-  packages0 = lib.mapAttrs (k: v:
-    let sv = splitAtLastAt k; in v // { constituents = [ (keyFor sv.name sv.version) ]; }
-  ) rawPackages;
+  packages0 = lib.foldl' (acc: k:
+    let
+      v = rawPackages."${k}";
+      sv = splitAtLastAt k;
+      newKey = keyFor sv.name sv.version;
+    in acc // { "${newKey}" = v // { constituents = [ newKey ]; } }
+  ) {} (lib.attrNames rawPackages);
 
   # Aggregate dependency maps from snapshots onto packages
   rawSnapshots = if (lib.hasAttr "snapshots" raw) then raw.snapshots else {};
