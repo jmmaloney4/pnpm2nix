@@ -1,0 +1,16 @@
+{
+  "lockfileVersion": "9.0",
+  "importers": {
+    ".": {
+      "dependencies": { "leftpad": "1.3.0" }
+    }
+  },
+  "packages": {
+    "leftpad@1.3.0": { "resolution": { "integrity": "sha512-..." } }
+  },
+  "snapshots": {
+    "leftpad@1.3.0": { "dependencies": {} }
+  }
+}
+
+
