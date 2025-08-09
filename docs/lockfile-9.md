@@ -141,6 +141,49 @@ Short-term (initial v9 support):
 Medium-term (optional follow-up):
 - Extend the normalizer to emit a list of importers and their root dependency sets in the IR, and teach `default.nix` to build a derivation per importer or a meta-derivation that wires them together. This will unlock multi-package workspaces on both v5/v9 with near-identical logic.
 
+#### Detailed requirements for workspace support (multi-importer)
+
+- IR changes (additive)
+  - Add `importers` to the IR: attrset of importer name -> `{ dependencies, devDependencies, optionalDependencies }`.
+  - Keep top-level `dependencies`/`devDependencies`/`optionalDependencies` for backward compatibility by mirroring `importers."."` when present.
+
+- Normalizers
+  - `normalize-v9.nix`:
+    - Remove the single-importer restriction and populate `importers = raw.importers` (filter nulls, default empty maps).
+    - Continue producing a single global `packages` map from `raw.packages` and `snapshots` as today.
+  - `normalize-v5.nix`:
+    - If `raw.importers` exists, map it into IR `importers` directly.
+    - Otherwise synthesize `importers."."` from legacy top-level root maps.
+
+- Graph rewrite (`rewriteGraph`)
+  - Keep package-level processing (peer resolution, dependency resolution, cycle breaking) global and unchanged.
+  - Resolve importer root dependency maps independently:
+    - For each importer, run the existing `resolveDependencies` over its `{dependencies, devDependencies, optionalDependencies}` to obtain lists of normalized package keys.
+    - Return these as `importersResolved.<name>.{dependencies,devDependencies,optionalDependencies}`.
+  - Preserve existing top-level lists for single-importer projects by copying from `importersResolved."."`.
+
+- Build wiring (`default.nix`)
+  - Single importer (`"."` only): unchanged behavior.
+  - Multiple importers: build one derivation per importer using that importer’s resolved root lists. Optionally export an aggregate result (e.g., an attrset of derivations keyed by importer and/or a `symlinkJoin` for combined bins).
+
+- link: handling across importers
+  - Keep `link:` specifiers unchanged in normalization (already true).
+  - Ensure rewrite/fetch phases do not attempt to download `link:` packages.
+  - When creating derivations for an importer, wire `link:` dependencies to the corresponding local importer output instead of the registry.
+
+- Tests
+  - Unit (normalization): multi-importer v9 fixture golden asserting `importers` is captured for all members.
+  - Unit (rewrite): ensure each importer’s root maps resolve to lists correctly and independently.
+  - Integration: small v9 workspace with two pure-JS packages where `a` depends on `b` via `link:`; check both importer outputs build and bins are linked.
+
+- Backward compatibility
+  - Single-project v5/v9 remains unchanged.
+  - New IR fields are additive; existing consumers that only read top-level lists continue to work with importer `"."`.
+
+- Optional improvements
+  - Include per-importer metadata (e.g., package.json name) for error messages.
+  - Add a debug toggle to dump IR and per-importer resolutions on failure.
+
 ### Peer dependency handling in v9
 
 The existing `resolvePackagePeerDependencies` uses `semver.satisfies` to match peers across the package set, then stores resolved attribute-name edges. This remains valid for v9 because:
