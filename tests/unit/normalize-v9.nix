@@ -20,7 +20,7 @@ let
   hasPkg = builtins.hasAttr "/leftpad/1.3.0" ir.packages;
   constituentsLen = if hasPkg then (builtins.length ir.packages."/leftpad/1.3.0".constituents) else 0;
   depLeftpad = ir.dependencies.leftpad or null;
-assert (ir.lockfileVersionMajor == 9);
+in assert (ir.lockfileVersionMajor == 9);
 assert hasPkg;
 assert (builtins.isInt constituentsLen);
 assert (builtins.isString depLeftpad);
