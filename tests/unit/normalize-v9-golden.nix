@@ -9,7 +9,7 @@ let
   # Keep only a stable subset for golden
   golden = {
     lockfileVersionMajor = ir.lockfileVersionMajor;
-    dependencies = ir.dependencies;
+    rootDependencies = builtins.attrNames (ir.dependencies or {});
     packages = lib.mapAttrs (k: v: {
       pname = v.pname or v.rawPname or null;
       version = v.version or null;
@@ -19,6 +19,6 @@ let
       constituentsLen = (builtins.length (v.constituents or []));
     }) ir.packages;
   };
-in golden
+in builtins.toJSON golden
 
 
