@@ -2,7 +2,7 @@
 
 let
   normalizeV5 = import ./normalize-v5.nix { inherit pkgs lib; };
-  # normalizeV9 will be wired in a subsequent step.
+  normalizeV9 = import ./normalize-v9.nix { inherit pkgs lib; };
 in raw:
   let
     # lockfileVersion may be a string or number; handle both
@@ -13,7 +13,7 @@ in raw:
   in if major == 5 then
     normalizeV5 raw
   else if major == 9 then
-    throw "lockfile v9 normalization not implemented yet"
+    normalizeV9 raw
   else
     throw "Unsupported pnpm lockfileVersion: ${versionStr}"
 
