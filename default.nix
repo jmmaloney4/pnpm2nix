@@ -202,8 +202,31 @@ in {
   in
     assert (pnpmlock.lockfileVersionMajor == 5 || pnpmlock.lockfileVersionMajor == 9);
   let
+    # Build packages attrset, including per-roots local (link:) packages
+    packagesForRoots = roots: let
+      linkPath = src: link: src + ("/" + (lib.removePrefix "link:" link));
+      nonLocalPackages = lib.mapAttrs (n: v: (let
+        drv = mkPnpmModule v;
+        overriden = overrideDrv overrides drv;
+      in overriden)) pnpmlock.packages;
+      localLinkNames = builtins.filter (a: lib.hasPrefix "link:" a)
+        (roots.dependencies ++ roots.devDependencies ++ roots.optionalDependencies);
+      resolvePkgName = (link: (lib.importJSON ((linkPath src link) + "/package.json")).name);
+      resolve = (link: lib.nameValuePair link (resolvePkgName link));
+      resolvedSpecifiers = lib.listToAttrs (map resolve localLinkNames);
+      localPackages = lib.mapAttrs (n: v: let
+        pkgPath = linkPath src n;
+        pkg = ((import ./default.nix modArgs).mkPnpmPackage {
+          inherit allowImpure;
+          src = pkgPath;
+          packageJSON = pkgPath + "/package.json";
+          pnpmLock = pkgPath + "/pnpm-lock.yaml";
+        }).overrideAttrs(oldAttrs: { src = wrapRawSrc pkgPath oldAttrs.pname; });
+      in pkg) resolvedSpecifiers;
+    in nonLocalPackages // localPackages;
+
     # Helper to build a package derivation for a given set of resolved root deps
-    buildForRoots = roots: mkPnpmDerivation {
+    buildForRoots = roots: let packages = packagesForRoots roots; in mkPnpmDerivation {
       deps = builtins.map (attrName: packages."${attrName}") (roots.dependencies ++ roots.optionalDependencies);
       devDependencies = builtins.map (attrName: packages."${attrName}") roots.devDependencies;
       inherit linkDevDependencies;
