@@ -1,0 +1,37 @@
+{ }:
+
+let
+  pkgs = import <nixpkgs> {};
+  lib = pkgs.lib;
+  normalize = import ../../lockfile/normalize.nix { inherit pkgs lib; };
+  rewriteGraph = import ../../pnpmlock.nix { inherit pkgs; nodejs = pkgs.nodejs; nodePackages = pkgs.nodePackages; };
+
+  raw = {
+    lockfileVersion = "9.0";
+    importers = { "." = {
+      dependencies = { leftpad = "1.3.0"; };
+    }; };
+    packages = {
+      "leftpad@1.3.0" = { resolution = {}; };
+      "dep-a@1.0.0" = { resolution = {}; };
+    };
+    snapshots = {
+      "leftpad@1.3.0" = { dependencies = { "dep-a" = "1.0.0"; }; };
+      "dep-a@1.0.0" = { };
+    };
+  };
+
+  ir = normalize raw;
+  rg = rewriteGraph ir;
+
+  leftpadKey = "/leftpad/1.3.0";
+  depAKey = "/dep-a/1.0.0";
+  leftpadDeps = rg.packages.${leftpadKey}.dependencies or [];
+
+in {
+  hasLeftpad = builtins.hasAttr leftpadKey rg.packages;
+  hasDepA = builtins.hasAttr depAKey rg.packages;
+  leftpadDependsOnDepA = lib.elem depAKey leftpadDeps;
+}
+
+

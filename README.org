@@ -22,6 +22,15 @@ mkPnpmPackage {
 
 More comprehensive examples can be found in the [[file://tests/][tests]].
 
+** Testing
+
+*** Flake-based (recommended)
+ - Run unit checks: =nix flake check=
+ - Open dev shell: =nix develop=
+
+*** Legacy suite
+ - Run with =make test= (may be slow/flaky; compiles native addons and uses network)
+
 ** Managing development environments with pnpm2nix
 
 *** default.nix
