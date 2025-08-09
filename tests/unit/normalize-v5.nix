@@ -15,11 +15,10 @@ let
   hasPkg = builtins.hasAttr "/camelcase/4.1.0" ir.packages;
   constituentsLen = if hasPkg then (builtins.length ir.packages."/camelcase/4.1.0".constituents) else 0;
   depCamelcase = ir.dependencies.camelcase or null;
-in {
-  lockfileVersionMajor = ir.lockfileVersionMajor;
-  hasPkg = hasPkg;
-  constituentsLenIsInt = builtins.isInt constituentsLen;
-  depCamelcaseIsString = builtins.isString depCamelcase;
-}
+assert (ir.lockfileVersionMajor == 5);
+assert hasPkg;
+assert (builtins.isInt constituentsLen);
+assert (builtins.isString depCamelcase);
+true
 
 
