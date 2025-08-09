@@ -248,11 +248,8 @@ let
   # force reindent (TODO: Remove me)
   rewriteGraph = pnpmlock: lib.foldl (acc: fn: fn acc) pnpmlock [
 
-    # Recursive workspaces are currently unsupported
-    (pnpmlock: (
-      if lib.hasAttr "importers" pnpmlock
-      then (throw "Workspaces currently unsupported. This is a regression from pnpm 2.x.")
-      else pnpmlock))
+    # Workspaces/importers are handled by the version-specific normalizers.
+    # No-op here to keep the rewrite graph version-agnostic.
 
     # A bare bones project might not have the packages attribute
     (pnpmlock: pnpmlock // {
