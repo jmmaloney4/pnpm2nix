@@ -18,7 +18,7 @@ let
 in {
   lockfileVersionMajor = ir.lockfileVersionMajor;
   hasPkg = hasPkg;
-  constituentsLen = constituentsLen;
+  constituentsLenIsInt = builtins.isInt constituentsLen;
   depCamelcaseIsString = builtins.isString depCamelcase;
 }
 
