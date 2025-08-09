@@ -236,8 +236,8 @@ in {
       importerVersion = importerPkg.version;
       importerNameStr = importerPname + "-" + importerVersion;
     in mkPnpmDerivation {
-      deps = builtins.map (attrName: packages."${attrName}") (roots.dependencies ++ roots.optionalDependencies);
-      devDependencies = builtins.map (attrName: packages."${attrName}") roots.devDependencies;
+      deps = builtins.map (attrName: packages."${attrName}") ((roots.dependencies or []) ++ (roots.optionalDependencies or []));
+      devDependencies = builtins.map (attrName: packages."${attrName}") (roots.devDependencies or []);
       inherit linkDevDependencies;
       passthru = { packageJSON = importerPkg; };
       attrs = ((lib.filterAttrs (k: v: !(lib.lists.elem k specialAttrs)) args) // {
