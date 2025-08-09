@@ -156,7 +156,9 @@ in {
       shaType = lib.elemAt integrity 0;
       shaSum = lib.elemAt integrity 1;
       tarball = (lib.lists.last (lib.splitString "/" pkgInfo.pname)) + "-" + pkgInfo.version + ".tgz";
-      registry = if builtins.hasAttr "registry" pnpmlock then pnpmlock.registry else "https://registry.npmjs.org/";
+      registry = if (builtins.hasAttr "registry" pnpmlock && pnpmlock.registry != null)
+        then pnpmlock.registry
+        else "https://registry.npmjs.org/";
       src = (if (lib.hasAttr "integrity" pkgInfo.resolution) then
         (pkgs.fetchurl {
           url = if (lib.hasAttr "tarball" pkgInfo.resolution)
