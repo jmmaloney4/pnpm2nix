@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import itertools
 import argparse
 import os.path
@@ -21,20 +21,23 @@ def get_bin_attr_files(package_json):
     except KeyError:
         return tuple()
     else:
-        if isinstance(bins, basestring):
+        # Python 3: JSON yields str
+        if isinstance(bins, str):
             return ((package_json['name'], bins),)
         else:
-            return bins.items()
+            return tuple(bins.items())
 
 
 def get_directories_bin_attr_files(package_json, lib_out):
     try:
-        bins = package_json['directories']['bin']
+        bins_dir = package_json['directories']['bin']
     except Exception:
-        pass
+        return tuple()
     else:
-        for f in os.path.listdir(os.path.join(lib_out, bins)):
-            yield os.path.join(lib_out, f)
+        dir_path = os.path.join(lib_out, bins_dir)
+        if not os.path.isdir(dir_path):
+            return tuple()
+        return tuple((f, os.path.join(bins_dir, f)) for f in os.listdir(dir_path))
 
 
 def resolve_bin_outputs(bin_out, lib_out, entries):
@@ -54,10 +57,7 @@ if __name__ == '__main__':
     for fout, fin in resolve_bin_outputs(
             args.bin_out, args.lib_out, itertools.chain(
                 get_bin_attr_files(package_json),
-                get_directories_bin_attr_files(args.lib_out, package_json))):
-
-        fin = fin.encode("utf-8");
-        fout = fout.encode("utf-8");
+                get_directories_bin_attr_files(package_json, args.lib_out))):
 
         os.symlink(fin, fout)
         os.chmod(fout, 0o755)
