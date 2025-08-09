@@ -1,7 +1,8 @@
 { pkgs, lib ? pkgs.lib }:
 
 # Normalize a pnpm v5/v5.1 lockfile JSON to the internal IR used by the
-# rewrite graph. This adapter preserves the current behavior.
+# rewrite graph. This adapter preserves the current behavior and synthesizes
+# an `importers` map for compatibility with workspaces logic.
 
 raw: let
   # Ensure we have a packages attrset
@@ -28,6 +29,17 @@ in {
   dependencies = rootDeps "dependencies";
   devDependencies = rootDeps "devDependencies";
   optionalDependencies = rootDeps "optionalDependencies";
+
+  # Synthesize importers – for v5, treat top-level as importer "."
+  importers = if (lib.hasAttr "importers" raw)
+    then raw.importers
+    else {
+      "." = {
+        dependencies = rootDeps "dependencies";
+        devDependencies = rootDeps "devDependencies";
+        optionalDependencies = rootDeps "optionalDependencies";
+      };
+    };
 
   # Package set for the resolver
   packages = withConstituents;

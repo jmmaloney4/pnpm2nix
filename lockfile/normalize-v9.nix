@@ -1,18 +1,23 @@
 { pkgs, lib ? pkgs.lib }:
 
 # Normalize a pnpm v9 lockfile JSON to the internal IR used by the
-# rewrite graph. Single-importer (".") only for the initial support.
+# rewrite graph. Multi-importer workspaces supported.
 
 raw:
 let
   die = msg: throw ("pnpm2nix v9 normalize: " + msg);
 
-  # Extract importer "." only
-  importers = if (lib.hasAttr "importers" raw) then raw.importers else die "missing importers";
-  root = if (lib.hasAttr "." importers) then importers."." else die "only single importer (.) is supported";
+  # Importers map (all importers)
+  importersRaw = if (lib.hasAttr "importers" raw) then raw.importers else die "missing importers";
+  sanitizeRoot = imp: attr: if (lib.hasAttr attr imp && imp."${attr}" != null) then imp."${attr}" else {};
+  importers = lib.mapAttrs (n: imp: {
+    dependencies = sanitizeRoot imp "dependencies";
+    devDependencies = sanitizeRoot imp "devDependencies";
+    optionalDependencies = sanitizeRoot imp "optionalDependencies";
+  }) importersRaw;
 
-  # Root dependency maps (default to empty attrsets)
-  rootDeps = attr: if (lib.hasAttr attr root && root."${attr}" != null) then root."${attr}" else {};
+  # Convenience accessor for top-level single-importer behavior
+  root = if (lib.hasAttr "." importers) then importers."." else { dependencies = {}; devDependencies = {}; optionalDependencies = {}; };
 
   # Convert a snapshot key like "@scope/name@1.2.3(react@18)" to base "@scope/name@1.2.3"
   stripPeerQualifiers = s:
@@ -71,15 +76,15 @@ let
   lockfileVersionMajor = 9;
 
 in {
-  inherit lockfileVersionMajor packages;
+  inherit lockfileVersionMajor packages importers;
 
   # Keep registry if present
   registry = if (lib.hasAttr "registry" raw) then raw.registry else null;
 
   # Root dependency maps (resolved later by rewrite stage)
-  dependencies = rootDeps "dependencies";
-  devDependencies = rootDeps "devDependencies";
-  optionalDependencies = rootDeps "optionalDependencies";
+  dependencies = root.dependencies;
+  devDependencies = root.devDependencies;
+  optionalDependencies = root.optionalDependencies;
 }
 
 

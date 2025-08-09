@@ -168,8 +168,7 @@ let
     in lib.foldl rewriteAttrSet packageSet (lib.attrNames packageSet);
 
   # Resolve top-level dependencies to pnpmlock attribute names
-  #
-  # packageSet: packages from pnpmlock.yaml
+  # Also resolve per-importer roots when present
   resolveDependencies = pnpmlock: let
       packageSet = pnpmlock.packages;
 
@@ -180,10 +179,21 @@ let
       in lib.mapAttrsToList (depName: depVersion:
         (findAttrName packageSet depName depVersion)) attrSet;
 
+      resolveImporter = imp: {
+        dependencies = lib.mapAttrsToList (depName: depVersion: (findAttrName packageSet depName depVersion)) (imp.dependencies or {});
+        devDependencies = lib.mapAttrsToList (depName: depVersion: (findAttrName packageSet depName depVersion)) (imp.devDependencies or {});
+        optionalDependencies = lib.mapAttrsToList (depName: depVersion: (findAttrName packageSet depName depVersion)) (imp.optionalDependencies or {});
+      };
+
+      importersResolved = if (lib.hasAttr "importers" pnpmlock)
+        then lib.mapAttrs (_: imp: resolveImporter imp) pnpmlock.importers
+        else {};
+
     in pnpmlock // {
       dependencies = rewriteAttrs "dependencies";
       devDependencies = rewriteAttrs "devDependencies";
       optionalDependencies = rewriteAttrs "optionalDependencies";
+      inherit importersResolved;
     };
 
   # Something something
@@ -287,9 +297,9 @@ let
       #
       # TODO: Dont include devDependencies and optionalDependencies unconditionally
       # We could easily optimise this away by only walking if they are included
-      dependencyAttributes = lib.unique (pnpmlock.dependencies
-        ++ pnpmlock.devDependencies
-        ++ pnpmlock.optionalDependencies);
+      dependencyAttributes = lib.unique (
+        pnpmlock.dependencies ++ pnpmlock.devDependencies ++ pnpmlock.optionalDependencies
+      );
     in {
       packages = breakCircular dependencyAttributes pnpmlock.packages;
     }))

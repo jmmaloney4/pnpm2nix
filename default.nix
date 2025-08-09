@@ -201,25 +201,28 @@ in {
 
   in
     assert (pnpmlock.lockfileVersionMajor == 5 || pnpmlock.lockfileVersionMajor == 9);
-  (mkPnpmDerivation {
-    deps = (builtins.map
-      (attrName: packages."${attrName}")
-      (pnpmlock.dependencies ++ pnpmlock.optionalDependencies));
-
-    devDependencies = builtins.map
-      (attrName: packages."${attrName}") pnpmlock.devDependencies;
-
-    inherit linkDevDependencies;
-
-    passthru = {
-      packageJSON = package;
+  let
+    # Helper to build a package derivation for a given set of resolved root deps
+    buildForRoots = roots: mkPnpmDerivation {
+      deps = builtins.map (attrName: packages."${attrName}") (roots.dependencies ++ roots.optionalDependencies);
+      devDependencies = builtins.map (attrName: packages."${attrName}") roots.devDependencies;
+      inherit linkDevDependencies;
+      passthru = { packageJSON = package; };
+      attrs = ((lib.filterAttrs (k: v: !(lib.lists.elem k specialAttrs)) args) // {
+        srcs = [ (wrapRawSrc src pname) ];
+        inherit name pname version;
+      });
     };
-
-    # Filter "special" attrs we know how to interpret, merge rest to drv attrset
-    attrs = ((lib.filterAttrs (k: v: !(lib.lists.elem k specialAttrs)) args) // {
-      srcs = [ (wrapRawSrc src pname) ];
-      inherit name pname version;
-    });
-  });
+  in
+    if (lib.hasAttr "importersResolved" pnpmlock && (lib.length (lib.attrNames pnpmlock.importersResolved) > 1)) then
+      # Multi-importer: return an attrset of derivations keyed by importer name
+      lib.mapAttrs (_: roots: buildForRoots roots) pnpmlock.importersResolved
+    else
+      # Single importer or legacy behavior: use top-level roots
+      buildForRoots {
+        dependencies = pnpmlock.dependencies;
+        devDependencies = pnpmlock.devDependencies;
+        optionalDependencies = pnpmlock.optionalDependencies;
+      };
 
 }
