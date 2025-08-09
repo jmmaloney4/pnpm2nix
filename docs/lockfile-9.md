@@ -202,6 +202,51 @@ Tests to add:
 - Projects with pnpm `pnpm-lock.yaml` v9.0 (single importer) build successfully, including cases with peers, `link:`, and git/tarball packages.
 - New tests cover normalization for v9 and pass in CI.
 
+### Appendix: Implementation plan
+
+Step 0: Repo scaffolding
+- Create directory `lockfile/`.
+- Add placeholders for `lockfile/normalize.nix`, `lockfile/normalize-v5.nix`, `lockfile/normalize-v9.nix` and wire them in `default.nix` later.
+
+Step 1: Factor pnpmlock rewrite into a callable function
+- In `pnpmlock.nix`, export a function `rewriteGraph` that takes the IR (as described) and returns the rewritten object; this is already the file’s return value, so only ensure it doesn’t throw on `importers`.
+- Remove the importers guard; it will be handled by the normalizers.
+
+Step 2: Implement normalize-v5
+- Input: raw v5/v5.1 lockfile JSON.
+- Output IR:
+  - Copy `packages` into IR `packages`, ensuring each entry minimally has `pname`, `version`, `resolution`, and `constituents = [ key ]`.
+  - Copy top-level dependency maps; compute `lockfileVersionMajor = 5`.
+  - Pass through `registry` when present.
+- Add unit test: feed current test fixtures through normalize-v5 and assert the IR shape matches what `pnpmlock.nix` expects today.
+
+Step 3: Implement normalize-v9
+- Input: raw v9 lockfile JSON.
+- Validate `importers` contains exactly `"."`; otherwise, throw a clear error (temporary workspace limitation).
+- Build IR `packages` by transforming `raw.packages` keys from `name@version` to `"/name/version"` and copying metadata including `resolution`.
+- Iterate `snapshots` and merge dependency maps into the corresponding IR package entries. When the snapshot key has peer qualifiers `(…)`, strip them to identify the base `name@version` for mapping to the IR key.
+- Read root dependency maps from `importers."."`.
+- Set `lockfileVersionMajor = 9`, pass `registry` when present.
+- Add unit tests with small v9 fixtures validating mapping and a case with peer-qualified snapshot keys.
+
+Step 4: Version dispatcher
+- Implement `lockfile/normalize.nix` that inspects `raw.lockfileVersion` (string or number), derives `major`, and delegates to v5 or v9 normalizers. Include a helpful error for unsupported versions.
+
+Step 5: Wire into default.nix
+- Replace direct `rewritePnpmLock lock` with `normalize lock` followed by invoking `rewriteGraph`.
+- Relax the assertion to the normalized IR: assert major in `{5,9}`.
+- Expose `rawLockfileVersion`/`lockfileVersionMajor` in passthru for debugging if useful.
+
+Step 6: Tests and fixtures
+- Duplicate a few existing v5 tests as v9 versions by regenerating minimal `pnpm-lock.yaml` v9 fixtures that correspond semantically to the v5 ones (peers, link, git/tarball).
+- Add a golden test that dumps the normalized IR for a small v9 project to ensure stability.
+- Ensure existing v5 tests pass unchanged.
+
+Step 7: Follow-ups (optional)
+- Workspace support: extend normalize-v5/v9 to handle multiple importers; teach `default.nix` to build per-importer outputs.
+- Diagnostics: add a `PNPM2NIX_DEBUG_IR` toggle to dump IR on failure.
+- Refactors: split `pnpmlock.nix` into `rewrite-graph.nix`, `resolve.nix`, `keys.nix` per “Suggested cleanups”.
+
 ### Appendix: relevant code citations
 
 Assertion on v5/v5.1 only in `default.nix`:
