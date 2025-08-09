@@ -59,8 +59,27 @@ if __name__ == '__main__':
                 get_bin_attr_files(package_json),
                 get_directories_bin_attr_files(package_json, args.lib_out))):
 
-        os.symlink(fin, fout)
-        os.chmod(fout, 0o755)
+        try:
+            if os.path.islink(fout) or os.path.exists(fout):
+                # If already correct, skip; otherwise replace
+                try:
+                    current = os.readlink(fout) if os.path.islink(fout) else None
+                except OSError:
+                    current = None
+                if current == fin:
+                    pass
+                else:
+                    try:
+                        os.remove(fout)
+                    except FileNotFoundError:
+                        pass
+                    os.symlink(fin, fout)
+            else:
+                os.symlink(fin, fout)
+            os.chmod(fout, 0o755)
+        except FileExistsError:
+            # Best-effort: if created by another pass, ignore
+            pass
 
         # Print input file to stdout so we can pipe it to patchShebangs
         print(fin)
