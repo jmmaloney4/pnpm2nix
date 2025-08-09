@@ -41,7 +41,7 @@ let
       v = rawPackages."${k}";
       sv = splitAtLastAt k;
       newKey = keyFor sv.name sv.version;
-    in acc // { "${newKey}" = v // { constituents = [ newKey ]; } }
+    in acc // { "${newKey}" = (v // { constituents = [ newKey ]; }) }
   ) {} (lib.attrNames rawPackages);
 
   # Aggregate dependency maps from snapshots onto packages
