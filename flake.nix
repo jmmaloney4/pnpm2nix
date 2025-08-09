@@ -17,15 +17,15 @@
 
       checks = forAllSystems (pkgs: {
         unit-normalize-v5 = pkgs.runCommand "unit-normalize-v5" {} ''
-          ${pkgs.nix}/bin/nix-instantiate --eval --json -E 'import ./tests/unit/normalize-v5.nix {}' >/dev/null
+          ${pkgs.nix}/bin/nix-instantiate --eval --json -E 'import ${./tests/unit/normalize-v5.nix} {}' >/dev/null
           mkdir $out; echo ok > $out/result
         '';
         unit-normalize-v9 = pkgs.runCommand "unit-normalize-v9" {} ''
-          ${pkgs.nix}/bin/nix-instantiate --eval --json -E 'import ./tests/unit/normalize-v9.nix {}' >/dev/null
+          ${pkgs.nix}/bin/nix-instantiate --eval --json -E 'import ${./tests/unit/normalize-v9.nix} {}' >/dev/null
           mkdir $out; echo ok > $out/result
         '';
         unit-rewrite-v9 = pkgs.runCommand "unit-rewrite-v9" {} ''
-          ${pkgs.nix}/bin/nix-instantiate --eval --json -E 'import ./tests/unit/rewrite-v9.nix {}' >/dev/null
+          ${pkgs.nix}/bin/nix-instantiate --eval --json -E 'import ${./tests/unit/rewrite-v9.nix} {}' >/dev/null
           mkdir $out; echo ok > $out/result
         '';
       });
