@@ -1,6 +1,6 @@
 { pkgs ? import <nixpkgs> {}
-, nodejs ? pkgs.nodejs-8_x
-, nodePackages ? pkgs.nodePackages_8_x
+, nodejs ? pkgs.nodejs
+, nodePackages ? pkgs.nodePackages
 , node-gyp ? nodePackages.node-gyp
 }:
 
@@ -28,11 +28,12 @@ in {
     # Trying to reduce some closure size
     dontPatchShebangs = true;
 
-    nativeBuildInputs = with pkgs; [ pkgconfig ];
+    nativeBuildInputs = with pkgs; [ pkg-config ];
 
     propagatedBuildInputs = [];
 
-    buildInputs = [ nodejs nodejs.passthru.python node-gyp ]
+    buildInputs = [ nodejs node-gyp ]
+      ++ lib.optionals (lib.hasAttr "passthru" nodejs && lib.hasAttr "python" nodejs.passthru) [ nodejs.passthru.python ]
       ++ lib.optionals (lib.hasAttr "buildInputs" attrs) attrs.buildInputs
       ++ lib.optionals linkDevDependencies devDependencies
       ++ deps;
