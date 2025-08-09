@@ -16,9 +16,9 @@ let
   # @acme/package -> acme-package
   safePkgName = name: builtins.replaceStrings ["@" "/"] ["" "-"] name;
 
-  rewritePnpmLock = import ./pnpmlock.nix {
-    inherit pkgs nodejs nodePackages;
-  };
+  # Versioned normalization to a stable IR
+  normalizeLockfile = import ./lockfile/normalize.nix { inherit pkgs lib; };
+  rewriteGraph = import ./pnpmlock.nix { inherit pkgs nodejs nodePackages; };
 
   importYAML = name: yamlFile: (lib.importJSON ((pkgs.runCommandNoCC name {} ''
     mkdir -p $out
@@ -90,7 +90,7 @@ in {
 
     pnpmlock = let
       lock = importYAML "${pname}-pnpmlock-${version}" pnpmLock;
-    in rewritePnpmLock lock;
+    in rewriteGraph (normalizeLockfile lock);
 
     # Convert pnpm package entries to nix derivations
     packages = let
@@ -198,7 +198,7 @@ in {
       };
 
   in
-    assert (pnpmlock.lockfileVersion == 5 || pnpmlock.lockfileVersion == 5.1);
+    assert (pnpmlock.lockfileVersionMajor == 5 || pnpmlock.lockfileVersionMajor == 9);
   (mkPnpmDerivation {
     deps = (builtins.map
       (attrName: packages."${attrName}")
