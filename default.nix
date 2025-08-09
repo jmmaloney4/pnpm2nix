@@ -203,19 +203,19 @@ in {
     assert (pnpmlock.lockfileVersionMajor == 5 || pnpmlock.lockfileVersionMajor == 9);
   let
     # Build packages attrset, including per-roots local (link:) packages
-    packagesForRoots = roots: let
-      linkPath = src: link: src + ("/" + (lib.removePrefix "link:" link));
+    packagesForRoots = importerPath: roots: let
+      linkPath = base: link: builtins.toPath ((builtins.toString base) + "/" + (lib.removePrefix "link:" link));
       nonLocalPackages = lib.mapAttrs (n: v: (let
         drv = mkPnpmModule v;
         overriden = overrideDrv overrides drv;
       in overriden)) pnpmlock.packages;
       localLinkNames = builtins.filter (a: lib.hasPrefix "link:" a)
         (roots.dependencies ++ roots.devDependencies ++ roots.optionalDependencies);
-      resolvePkgName = (link: (lib.importJSON ((linkPath src link) + "/package.json")).name);
+      resolvePkgName = (link: (lib.importJSON ((linkPath importerPath link) + "/package.json")).name);
       resolve = (link: lib.nameValuePair link (resolvePkgName link));
       resolvedSpecifiers = lib.listToAttrs (map resolve localLinkNames);
       localPackages = lib.mapAttrs (n: v: let
-        pkgPath = linkPath src n;
+        pkgPath = linkPath importerPath n;
         pkg = ((import ./default.nix modArgs).mkPnpmPackage {
           inherit allowImpure;
           src = pkgPath;
@@ -226,23 +226,34 @@ in {
     in nonLocalPackages // localPackages;
 
     # Helper to build a package derivation for a given set of resolved root deps
-    buildForRoots = roots: let packages = packagesForRoots roots; in mkPnpmDerivation {
+    buildForRoots = importerName: roots: let
+      importerPath = if importerName == "."
+        then builtins.toPath (builtins.toString src)
+        else builtins.toPath ((builtins.toString src) + "/" + importerName);
+      packages = packagesForRoots importerPath roots;
+      importerPkg = lib.importJSON (importerPath + "/package.json");
+      importerPname = safePkgName importerPkg.name;
+      importerVersion = importerPkg.version;
+      importerNameStr = importerPname + "-" + importerVersion;
+    in mkPnpmDerivation {
       deps = builtins.map (attrName: packages."${attrName}") (roots.dependencies ++ roots.optionalDependencies);
       devDependencies = builtins.map (attrName: packages."${attrName}") roots.devDependencies;
       inherit linkDevDependencies;
-      passthru = { packageJSON = package; };
+      passthru = { packageJSON = importerPkg; };
       attrs = ((lib.filterAttrs (k: v: !(lib.lists.elem k specialAttrs)) args) // {
-        srcs = [ (wrapRawSrc src pname) ];
-        inherit name pname version;
+        srcs = [ (wrapRawSrc importerPath importerPname) ];
+        name = importerNameStr;
+        pname = importerPname;
+        version = importerVersion;
       });
     };
   in
     if (lib.hasAttr "importersResolved" pnpmlock && (lib.length (lib.attrNames pnpmlock.importersResolved) > 1)) then
       # Multi-importer: return an attrset of derivations keyed by importer name
-      lib.mapAttrs (_: roots: buildForRoots roots) pnpmlock.importersResolved
+      lib.mapAttrs (imp: roots: buildForRoots imp roots) pnpmlock.importersResolved
     else
       # Single importer or legacy behavior: use top-level roots
-      buildForRoots {
+      buildForRoots "." {
         dependencies = pnpmlock.dependencies;
         devDependencies = pnpmlock.devDependencies;
         optionalDependencies = pnpmlock.optionalDependencies;

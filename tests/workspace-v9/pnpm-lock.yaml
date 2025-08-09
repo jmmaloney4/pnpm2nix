@@ -3,21 +3,12 @@ lockfileVersion: '9.0'
 importers:
   .:
     dependencies:
-      leftpad: 1.3.0
+      pkg-a: link:pkg-a
   pkg-a:
-    dependencies:
-      dep-a: 1.0.0
+    dependencies: {}
 
-packages:
-  leftpad@1.3.0:
-    resolution: {integrity: sha512-...}
-  dep-a@1.0.0:
-    resolution: {integrity: sha512-...}
+packages: {}
 
-snapshots:
-  leftpad@1.3.0:
-    dependencies:
-      dep-a: 1.0.0
-  dep-a@1.0.0: {}
+snapshots: {}
 
 

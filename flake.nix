@@ -51,6 +51,13 @@
           ${pkgs.nix}/bin/nix-instantiate --eval --json -E 'import ${./tests/unit/rewrite-v9-workspace.nix} { root = ${./.}; }' >/dev/null
           mkdir $out; echo ok > $out/result
         '';
+        integ-workspace-v9 = pkgs.runCommand "integ-workspace-v9" {} ''
+          export HOME=$TMPDIR
+          export XDG_CACHE_HOME=$TMPDIR
+          drv=$(${pkgs.nix}/bin/nix-instantiate -E 'let pkgs=import <nixpkgs>{}; in import ${./tests/workspace-v9} { inherit pkgs; root = ${./.}; }')
+          ${pkgs.nix}/bin/nix-store --realise "$drv" >/dev/null
+          mkdir $out; echo ok > $out/result
+        '';
       });
     };
 }
