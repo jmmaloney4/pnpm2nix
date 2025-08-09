@@ -8,7 +8,7 @@ importers:
 packages:
   is-number@7.0.0:
     resolution:
-      integrity: sha512-01M+xEXLhUA7iQBM+Ggwn9LxkROIcibg8fdfDd67+4azl5RbyNVHG0Zj0ua6prltCNpEO0xl6gqNiBnz1FvI8w==
+      integrity: sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==
 
 snapshots:
   is-number@7.0.0: {}
