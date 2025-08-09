@@ -28,7 +28,7 @@ let
   depAKey = "/dep-a/1.0.0";
   leftpadDeps = rg.packages.${leftpadKey}.dependencies or [];
 
-assert (builtins.hasAttr leftpadKey rg.packages);
+in assert (builtins.hasAttr leftpadKey rg.packages);
 assert (builtins.hasAttr depAKey rg.packages);
 assert (lib.elem depAKey leftpadDeps);
 true
