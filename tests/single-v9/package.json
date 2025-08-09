@@ -1,0 +1,10 @@
+{
+  "name": "single-root",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "pkg-a": "link:pkg-a"
+  }
+}
+
+

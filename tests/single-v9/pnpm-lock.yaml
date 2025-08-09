@@ -1,0 +1,12 @@
+lockfileVersion: '9.0'
+
+importers:
+  .:
+    dependencies:
+      pkg-a: link:pkg-a
+
+packages: {}
+
+snapshots: {}
+
+

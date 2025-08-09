@@ -58,6 +58,13 @@
           ${pkgs.nix}/bin/nix-store --realise "$drv" >/dev/null
           mkdir $out; echo ok > $out/result
         '';
+        integ-v9-single = pkgs.runCommand "integ-v9-single" {} ''
+          export HOME=$TMPDIR
+          export XDG_CACHE_HOME=$TMPDIR
+          drv=$(${pkgs.nix}/bin/nix-instantiate -E 'let pkgs=import <nixpkgs>{}; in import ${./tests/single-v9} { inherit pkgs; root = ${./.}; }')
+          ${pkgs.nix}/bin/nix-store --realise "$drv" >/dev/null
+          mkdir $out; echo ok > $out/result
+        '';
       });
     };
 }
