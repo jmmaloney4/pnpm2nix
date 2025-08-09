@@ -1,5 +1,5 @@
 { pkgs ? import <nixpkgs> {}
-, nodejs ? pkgs.nodejs
+, nodejs ? (pkgs.nodejs_20 or pkgs.nodejs)
 , nodePackages ? pkgs.nodePackages
 , node-gyp ? nodePackages.node-gyp
 } @modArgs:

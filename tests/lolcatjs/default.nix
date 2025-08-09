@@ -1,6 +1,6 @@
 { pkgs ? (import <nixpkgs> {})}:
 with pkgs;
-with (import ../../. { inherit pkgs; });
+with (import ../../. { inherit pkgs; nodejs = (pkgs.nodejs_20 or pkgs.nodejs); });
 let
   package = mkPnpmPackage {
 
