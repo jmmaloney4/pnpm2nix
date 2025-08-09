@@ -1,0 +1,26 @@
+lockfileVersion: '9.0'
+
+importers:
+  .:
+    dependencies:
+      react: 18.2.0
+      react-dom: 18.2.0
+
+packages:
+  react@18.2.0:
+    resolution:
+      integrity: sha512-/3IjMdb2M4R…==
+    peerDependencies: {}
+  react-dom@18.2.0:
+    resolution:
+      integrity: sha512-RZbZ5zZ9…==
+    peerDependencies:
+      react: ^18.2.0
+
+snapshots:
+  react@18.2.0: {}
+  react-dom@18.2.0:
+    peerDependencies:
+      react: ^18.2.0
+
+

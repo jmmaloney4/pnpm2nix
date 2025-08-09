@@ -65,6 +65,20 @@
           ${pkgs.nix}/bin/nix-store --realise "$drv" >/dev/null
           mkdir $out; echo ok > $out/result
         '';
+        integ-v9-registry = pkgs.runCommand "integ-v9-registry" {} ''
+          export HOME=$TMPDIR
+          export XDG_CACHE_HOME=$TMPDIR
+          drv=$(${pkgs.nix}/bin/nix-instantiate -E 'let pkgs=import <nixpkgs>{}; in import ${./tests/registry-v9} { inherit pkgs; root = ${./.}; }')
+          ${pkgs.nix}/bin/nix-store --realise "$drv" >/dev/null
+          mkdir $out; echo ok > $out/result
+        '';
+        integ-v9-peer = pkgs.runCommand "integ-v9-peer" {} ''
+          export HOME=$TMPDIR
+          export XDG_CACHE_HOME=$TMPDIR
+          drv=$(${pkgs.nix}/bin/nix-instantiate -E 'let pkgs=import <nixpkgs>{}; in import ${./tests/peer-v9} { inherit pkgs; root = ${./.}; }')
+          ${pkgs.nix}/bin/nix-store --realise "$drv" >/dev/null
+          mkdir $out; echo ok > $out/result
+        '';
       });
     };
 }
