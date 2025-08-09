@@ -1,9 +1,9 @@
-{ }:
+{ root }:
 
 let
   pkgs = import <nixpkgs> {};
   lib = pkgs.lib;
-  normalize = import ../../lockfile/normalize.nix { inherit pkgs lib; };
+  normalize = import (root + "/lockfile/normalize.nix") { inherit pkgs lib; };
   raw = {
     lockfileVersion = "9.0";
     importers = { "." = {

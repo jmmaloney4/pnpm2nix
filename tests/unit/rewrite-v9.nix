@@ -1,10 +1,10 @@
-{ }:
+{ root }:
 
 let
   pkgs = import <nixpkgs> {};
   lib = pkgs.lib;
-  normalize = import ../../lockfile/normalize.nix { inherit pkgs lib; };
-  rewriteGraph = import ../../pnpmlock.nix { inherit pkgs; nodejs = pkgs.nodejs; nodePackages = pkgs.nodePackages; };
+  normalize = import (root + "/lockfile/normalize.nix") { inherit pkgs lib; };
+  rewriteGraph = import (root + "/pnpmlock.nix") { inherit pkgs; nodejs = pkgs.nodejs; nodePackages = pkgs.nodePackages; };
 
   raw = {
     lockfileVersion = "9.0";
