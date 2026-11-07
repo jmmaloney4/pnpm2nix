@@ -22,11 +22,11 @@ with pkgs;
 
   hiredis = (drv: drv.overrideAttrs(oldAttrs: {
     buildInputs = oldAttrs.buildInputs
-      ++ lib.optional stdenv.isDarwin darwin.cctools;
+      ++ lib.optional stdenv.hostPlatform.isDarwin darwin.cctools;
   }));
 
   pkcs11js = (drv: drv.overrideAttrs(oldAttrs: {
     buildInputs = oldAttrs.buildInputs
-      ++ lib.optional stdenv.isDarwin darwin.libobjc;
+      ++ lib.optional stdenv.hostPlatform.isDarwin darwin.libobjc;
   }));
 }
